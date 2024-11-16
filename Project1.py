@@ -1,102 +1,129 @@
 import streamlit as st
-import math
+import random
+import time
 
-# Function to display game instructions
-def display_rules(mode):
-    if mode == "User guessing":
-        st.write("""
-        **Rules for User Guessing Mode:**
-        1. The computer will choose a number within a certain range.
-        2. Your goal is to guess the number in as few attempts as possible.
-        3. After each guess, you'll be told if your guess was too high or too low.
-        4. Try to achieve the optimal number of attempts!
+# Page config
+st.set_page_config(
+    page_title="Number Guessing Game",
+    page_icon="🎮",
+    layout="centered"
+)
 
-        **Optimal attempts**: Calculated using binary search for efficiency.
-        """)
-    elif mode == "Machine guessing":
-        st.write("""
-        **Rules for Machine Guessing Mode:**
-        1. You think of a number within a certain range.
-        2. The machine will try to guess your number, and you will provide feedback if it's too high or too low.
-        3. The machine will use binary search to find your number quickly.
-        """)
-    st.write("---")
+# Custom CSS
+st.markdown("""
+<style>
+    .main {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+    }
+    .stButton>button {
+        background-color: #4CAF50;
+        color: white;
+        border-radius: 20px;
+        padding: 10px 24px;
+        font-size: 16px;
+    }
+    .stTextInput>div>div>input {
+        border-radius: 20px;
+    }
+    .game-container {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 20px;
+        border-radius: 15px;
+        backdrop-filter: blur(10px);
+    }
+</style>
+""", unsafe_allow_html=True)
 
-
-# Main Game Function
-def play_guessing_game():
-    st.title("Guessing Game")
-
-    # Choose game mode
-    mode = st.selectbox("Choose a game mode:", ["User guessing", "Machine guessing"])
-
-    # Display rules based on mode
-    display_rules(mode)
-
-    # Set dynamic range inputs
-    min_val = st.number_input("Enter the minimum value of the range:", value=1, step=1, key="min_val")
-    max_val = st.number_input("Enter the maximum value of the range:", value=100, step=1, key="max_val")
-
-    if mode == "User guessing":
-        # Optimal attempts for user reference
-        optimal_attempts = math.ceil(math.log2(max_val - min_val + 1))
-        st.write(f"Optimal number of attempts: {optimal_attempts}")
-
-        # Computer randomly selects a number
-        import random
-        if 'target' not in st.session_state:
-            st.session_state.target = random.randint(min_val, max_val)
-            st.session_state.attempts = 0
-
-        # User input guess
-        guess = st.number_input("Take a guess:", min_value=min_val, max_value=max_val, step=1, key="user_guess")
-        st.session_state.attempts += 1
-
-        # Feedback based on guess
-        if guess < st.session_state.target:
-            st.warning("Too low! Try again.")
-        elif guess > st.session_state.target:
-            st.warning("Too high! Try again.")
+def machine_guess(low, high, target):
+    steps = 0
+    while low <= high:
+        steps += 1
+        guess = (low + high) // 2
+        if guess == target:
+            return steps, guess
+        elif guess < target:
+            low = guess + 1
         else:
-            st.success(f"Correct! You've guessed the number {st.session_state.target} in {st.session_state.attempts} attempts.")
-            if st.session_state.attempts <= optimal_attempts:
-                st.write("Congratulations! You achieved the optimal attempt count!")
-            else:
-                st.write("Try again to reach the optimal attempt count.")
-            st.session_state.target = random.randint(min_val, max_val)  # Reset for replay
+            high = guess - 1
+    return steps, guess
 
-    elif mode == "Machine guessing":
-        # Initialize session state variables
-        if 'guess' not in st.session_state:
-            st.session_state.low = min_val
-            st.session_state.high = max_val
-            st.session_state.guess = (min_val + max_val) // 2
-            st.session_state.machine_attempts = 0
+def main():
+    st.title("🎮 Ultimate Number Guessing Game")
+    
+    # Game mode selection
+    game_mode = st.radio("Select Game Mode:", ["You Guess", "Machine Guesses"])
+    
+    if game_mode == "You Guess":
+        st.markdown("<div class='game-container'>", unsafe_allow_html=True)
+        if 'random_number' not in st.session_state:
+            st.session_state.random_number = random.randint(1, 100)
+            st.session_state.attempts = 0
+            st.session_state.optimal_steps = len(bin(100)[2:])
 
-        # Display machine's current guess
-        st.write(f"Machine's guess: {st.session_state.guess}")
-        feedback = st.radio("Is the guess too high, too low, or correct?", ("Too high", "Too low", "Correct"))
+        st.write("I'm thinking of a number between 1 and 100!")
+        st.write(f"Can you guess it in {st.session_state.optimal_steps} steps or less? 🤔")
+    
+        guess = st.number_input("Enter your guess:", min_value=1, max_value=100, step=1, key="user_guess")
+    
+        if st.button("Submit Guess"):
+            st.session_state.attempts += 1
+        
+            if guess == st.session_state.random_number:
+                st.balloons()
+                st.success(f"🎉 Congratulations! You found the number {st.session_state.random_number} in {st.session_state.attempts} attempts!")
+                if st.session_state.attempts <= st.session_state.optimal_steps:
+                    st.success("You did it optimally! 🌟")
+                if st.button("Play Again"):
+                    st.session_state.clear()
+                    st.experimental_rerun()
+            elif guess < st.session_state.random_number:
+                st.warning("Your Guess is Too Low!!! ⬆️")
+            elif guess > st.session_state.random_number:
+                st.warning("Your Guess is Too High!!! ⬇️")
+                
+        st.write(f"Attempts so far: {st.session_state.attempts}")
+        st.markdown("</div>", unsafe_allow_html=True)
 
-        # Process feedback for machine's binary search adjustment
-        if feedback == "Too high":
-            st.session_state.high = st.session_state.guess - 1
-            st.session_state.machine_attempts += 1
-        elif feedback == "Too low":
-            st.session_state.low = st.session_state.guess + 1
-            st.session_state.machine_attempts += 1
+    else:  # Machine Guesses
+        st.markdown("<div class='game-container'>", unsafe_allow_html=True)
+        st.write("Think of a number between 1 and 100!")
+        
+        if 'machine_game_started' not in st.session_state:
+            st.session_state.machine_game_started = False
+            st.session_state.low = 1
+            st.session_state.high = 100
+            st.session_state.machine_steps = 0
+        
+        if st.button("Start Machine Guessing"):
+            st.session_state.machine_game_started = True
+            
+        if st.session_state.machine_game_started:
+            guess = (st.session_state.low + st.session_state.high) // 2
+            st.write(f"Is your number {guess}?")
+            
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                if st.button("Too Low"):
+                    st.session_state.low = guess + 1
+                    st.session_state.machine_steps += 1
+                    
+            with col2:
+                if st.button("Correct!"):
+                    st.balloons()
+                    st.success(f"Found your number in {st.session_state.machine_steps + 1} steps!")
+                    if st.button("New Game"):
+                        st.session_state.clear()
+                        st.experimental_rerun()
+                        
+            with col3:
+                if st.button("Too High"):
+                    st.session_state.high = guess - 1
+                    st.session_state.machine_steps += 1
+                    
+        st.write(f"Machine steps: {st.session_state.machine_steps}")
+        st.markdown("</div>", unsafe_allow_html=True)
 
-        # Update machine's guess
-        if feedback != "Correct":
-            st.session_state.guess = (st.session_state.low + st.session_state.high) // 2
-
-        # Display success message if machine guessed correctly
-        if feedback == "Correct":
-            st.success(f"The machine guessed your number in {st.session_state.machine_attempts} attempts!")
-            # Reset for replay
-            st.session_state.low = min_val
-            st.session_state.high = max_val
-            st.session_state.guess = (min_val + max_val) // 2
-            st.session_state.machine_attempts = 0
-
-# Run the main game function
-play_guessing_game()
+if __name__ == "__main__":
+    main()
