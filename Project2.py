@@ -1,16 +1,14 @@
 import streamlit as st
 
-# Function to display the about me section with image upload
 def about_me():
     st.header("About Me")
-    st.image("profile.jpg", width=150)  # Placeholder for profile image
+    st.image("profile.jpg", width=150)  
     st.write("""
     Hello! I'm **Mourish Antony.C**, a **Student**. I have a passion for **Coding**.
     I love to work on projects that involve **Fullstrack Development**.
     Feel free to connect with me!
     """)
 
-# Function to display the projects section with expandable cards
 def projects():
     st.header("Projects")
     project_data = [
@@ -23,7 +21,6 @@ def projects():
             st.write(project["description"])
             st.markdown(f"[View Project]({project['link']})")
 
-# Function to display the skills section with progress bars
 def skills():
     st.header("Skills")
     skills_data = {
@@ -38,7 +35,6 @@ def skills():
         st.write(f"{skill}: {percentage}%")
         st.progress(percentage / 100)
 
-# Function to display the contact section
 def contact():
     st.header("Contact Me")
     st.write("""
@@ -48,12 +44,10 @@ def contact():
     - GitHub: https://github.com/mourishantony
     """)
 
-# Main app function
 def main():
     st.set_page_config(page_title="My Portfolio", layout="wide", initial_sidebar_state="expanded")
     st.title("Welcome to My Portfolio")
 
-    # Sidebar navigation
     menu = ["About Me", "Projects", "Skills", "Contact"]
     choice = st.sidebar.selectbox("Select a section", menu)
 
@@ -66,6 +60,5 @@ def main():
     elif choice == "Contact":
         contact()
 
-# Run the app
 if __name__ == '__main__':
     main()
